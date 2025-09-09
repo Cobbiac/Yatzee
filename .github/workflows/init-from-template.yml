@@ -1,0 +1,95 @@
+name: Initialize from template
+
+on:
+  push:
+    branches: [main]   # run on first push to main
+  workflow_dispatch:    # or run manually from Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Guard: run only once (while the sentinel exists)
+      - name: Check sentinel
+        id: guard
+        shell: bash
+        run: |
+          if [ -f ".github/initialized" ] || [ ! -f ".github/template.yml" ]; then
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop if already initialized
+        if: steps.guard.outputs.done == 'true'
+        run: echo "Already initialized (or sentinel missing). Skipping."
+
+      - name: Fetch repo & owner info (GraphQL)
+        if: steps.guard.outputs.done != 'true'
+        id: info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const query = `query($owner:String!, $name:String!){
+              repository(owner:$owner, name:$name){
+                name
+                description
+                owner { login ... on User { name } ... on Organization { name } }
+              }
+            }`;
+            const data = await github.graphql(query, {owner, name: repo});
+            const r = data.repository;
+            core.setOutput('repo_name', r.name || repo);
+            core.setOutput('description', r.description || '');
+            core.setOutput('owner_login', r.owner.login || owner);
+            core.setOutput('owner_name',  r.owner.name  || r.owner.login || owner);
+
+      - name: Compute naming env vars
+        if: steps.guard.outputs.done != 'true'
+        shell: bash
+        run: |
+          KEBAB="$(echo "${{ steps.info.outputs.repo_name }}" | tr '[:upper:]' '[:lower:]')"
+          SNAKE="$(echo "$KEBAB" | tr '-' '_')"
+          DESC="${{ steps.info.outputs.description }}"
+          [ -z "$DESC" ] && DESC="Awesome $KEBAB created by ${{ steps.info.outputs.owner_login }}"
+          echo "APP_KEBAB=$KEBAB"         >> $GITHUB_ENV
+          echo "APP_SNAKE=$SNAKE"         >> $GITHUB_ENV
+          echo "APP_DESCRIPTION=$DESC"     >> $GITHUB_ENV
+          echo "OWNER_LOGIN=${{ steps.info.outputs.owner_login }}" >> $GITHUB_ENV
+          echo "OWNER_NAME=${{ steps.info.outputs.owner_name }}"   >> $GITHUB_ENV
+
+      - name: Make script executable
+        if: steps.guard.outputs.done != 'true'
+        run: chmod +x .github/rename_project.sh
+
+      - name: Run renamer
+        if: steps.guard.outputs.done != 'true'
+        env:
+          APP_KEBAB: ${{ env.APP_KEBAB }}
+          APP_SNAKE: ${{ env.APP_SNAKE }}
+          OWNER_LOGIN: ${{ env.OWNER_LOGIN }}
+          OWNER_NAME: ${{ env.OWNER_NAME }}
+          APP_DESCRIPTION: ${{ env.APP_DESCRIPTION }}
+        run: .github/rename_project.sh
+
+      - name: Mark initialized
+        if: steps.guard.outputs.done != 'true'
+        run: echo "ok" > .github/initialized
+
+      - name: Commit & push
+        if: steps.guard.outputs.done != 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: initialize from template (${APP_KEBAB})" || echo "Nothing to commit"
+          git push
