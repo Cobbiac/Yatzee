@@ -1,4 +1,4 @@
-(ns reagent-starter-project.app.core
+(ns yatzee.app.core
   (:require [reagent.core :as r]
             [reagent.dom :as rdom]))
 

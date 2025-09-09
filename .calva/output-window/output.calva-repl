@@ -50,7 +50,7 @@ nil
 about why stdout printed to this file is prepended with `;` to be line comments."
 cljs꞉user꞉> 
 2
-cljs꞉reagent-starter-project.app.core꞉> 
+cljs꞉yatzee.app.core꞉> 
 ; nREPL Connection was closed
 ; Jacking in...
 ; Connecting using "shadow-cljs" project type.

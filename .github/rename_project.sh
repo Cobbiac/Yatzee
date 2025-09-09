@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 👉 CHANGE THESE if your template placeholder is not "reagent-starter-project"
-OLD_KEBAB="reagent-starter-project"   # e.g. appears in README, package.json, shadow-cljs.edn, namespaces
-OLD_SNAKE="reagent_starter_project"   # e.g. directory name under src/main, src/test, etc.
+# 👉 CHANGE THESE if your template placeholder is not "yatzee"
+OLD_KEBAB="yatzee"   # e.g. appears in README, package.json, shadow-cljs.edn, namespaces
+OLD_SNAKE="yatzee"   # e.g. directory name under src/main, src/test, etc.
 
 APP_KEBAB="${APP_KEBAB:?APP_KEBAB not set}"   # e.g. "my-new-app"
 APP_SNAKE="${APP_SNAKE:?APP_SNAKE not set}"   # e.g. "my_new_app"
@@ -12,7 +12,7 @@ OWNER_NAME="${OWNER_NAME:-$OWNER_LOGIN}"
 APP_DESCRIPTION="${APP_DESCRIPTION:-"Awesome $APP_KEBAB created by $OWNER_LOGIN"}"
 
 # Optional token placeholders you can use in files (recommended):
-# __APP_NAME_KEBAB__, __APP_NAME_SNAKE__, __APP_DESCRIPTION__, __APP_OWNER_LOGIN__, __APP_OWNER_NAME__
+# yatzee, yatzee, A yatzee, Cobbiac, Cobbiac
 
 echo "🔧 Replacing content:"
 echo "  ${OLD_KEBAB}  -> ${APP_KEBAB}"
@@ -26,11 +26,11 @@ if git ls-files -z >/dev/null 2>&1; then
   sed -i \
     -e "s/${OLD_KEBAB//\//\\/}/${APP_KEBAB//\//\\/}/g" \
     -e "s/${OLD_SNAKE//\//\\/}/${APP_SNAKE//\//\\/}/g" \
-    -e "s/__APP_NAME_KEBAB__/${APP_KEBAB//\//\\/}/g" \
-    -e "s/__APP_NAME_SNAKE__/${APP_SNAKE//\//\\/}/g" \
-    -e "s/__APP_DESCRIPTION__/${APP_DESCRIPTION//\//\\/}/g" \
-    -e "s/__APP_OWNER_LOGIN__/${OWNER_LOGIN//\//\\/}/g" \
-    -e "s/__APP_OWNER_NAME__/${OWNER_NAME//\//\\/}/g"
+    -e "s/yatzee/${APP_KEBAB//\//\\/}/g" \
+    -e "s/yatzee/${APP_SNAKE//\//\\/}/g" \
+    -e "s/A yatzee/${APP_DESCRIPTION//\//\\/}/g" \
+    -e "s/Cobbiac/${OWNER_LOGIN//\//\\/}/g" \
+    -e "s/Cobbiac/${OWNER_NAME//\//\\/}/g"
 else
   echo "No tracked files found; skipping replacements."
 fi
